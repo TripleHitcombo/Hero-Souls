@@ -1,2 +1,2 @@
-# Maximum_Wiepout
-A platformer built in Unreal Engine 5
+# Hero_Souls
+This repo will contain alll the C++ classes for the game
