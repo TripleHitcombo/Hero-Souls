@@ -6,6 +6,13 @@
 #include "Components/ActorComponent.h"
 #include "LockOnComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam
+(
+	FOnUpdatedTargetSignature,
+	ULockOnComponent, OnUpdatedTargetDelegate,
+	AActor*, NewTargetActorRef
+);
+//sends one piece of information
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class HERO_SOULS_API ULockOnComponent : public UActorComponent
@@ -26,6 +33,8 @@ public:
 
 	AActor* CurrentTargetActor;
 
+	UPROPERTY (BlueprintAssignable)
+	FOnUpdatedTargetSignature OnUpdatedTargetDelegate;
 
 
 protected:
@@ -39,6 +48,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void ToggleLockOn(float Radius = 750.0f);
 
+	UPROPERTY(EditAnywhere) 
 	double BreakDistance{ 1000.0 };
 
 public:	
