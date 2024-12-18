@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/MainCharacterInterface.h"
+#include "Interfaces/FighterInterface.h"
 #include "MainCharacter.generated.h"
 
 UCLASS()
-class HERO_SOULS_API AMainCharacter : public ACharacter
+class HERO_SOULS_API AMainCharacter : public ACharacter, public IMainCharacterInterface, public IFighterInterface
 {
 	GENERATED_BODY()
 
@@ -19,11 +21,16 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UPROPERTY(BlueprintReadOnly)
+	class UPlayerAnimInstance* PlayerAnim;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual float GetDamage() override;
 
 };
