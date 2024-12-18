@@ -2,6 +2,7 @@
 
 
 #include "Characters/MainCharacter.h"
+#include "Animations/PlayerAnimInstance.h"
 
 // Sets default values
 AMainCharacter::AMainCharacter()
@@ -15,6 +16,8 @@ AMainCharacter::AMainCharacter()
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	PlayerAnim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
 	
 }
 
@@ -30,5 +33,10 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+}
+
+float AMainCharacter::GetDamage()
+{
+	return 10.0f;
 }
 
