@@ -25,6 +25,9 @@ AMainCharacter::AMainCharacter()
 	BlockComp = CreateDefaultSubobject<UBlockComponent>(TEXT("Block Component"));
 	PlayerActionsComp = CreateDefaultSubobject<UPlayerActionsComponent>(TEXT("PlayerActions Component"));
 
+	HurtAnimMontage = nullptr;
+	DeathAnimMontage = nullptr;
+
 }
 
 // Called when the game starts or when spawned
@@ -58,5 +61,66 @@ float AMainCharacter::GetDamage()
 bool AMainCharacter::HasEnoughStamina(float Cost)
 {
 	return StatsComp->Stats[EStat::Stamina] >= Cost;
+}
+
+void AMainCharacter::HandleDeath()
+{
+	if (!DeathAnimMontage)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DeathAnimMontage is null! Cannot play death animation."));
+		return;
+	}
+	
+	PlayAnimMontage(DeathAnimMontage);
+
+	DisableInput(GetController<APlayerController>());
+}
+
+void AMainCharacter::EndLockOnWithActor(AActor* ActorRef)
+{
+	if (LockOnComp->CurrentTargetActor != ActorRef)
+	{
+		return;
+	}
+
+	LockOnComp->EndLockOn();
+
+}
+
+bool AMainCharacter::CanTakeDamage(AActor* Opponent)
+{
+	UE_LOG(LogTemp, Warning, TEXT("CanTakeDamage called"));
+
+	if (PlayerActionsComp && PlayerActionsComp->bIsRollActive)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Cannot take damage while rolling"));
+		return false;
+	}
+
+	if (PlayerAnim && PlayerAnim->isBlocking)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Blocking detected; checking BlockComp"));
+		return BlockComp && BlockComp->BlockSuccess(Opponent);
+	}
+
+	return true;
+}
+
+void AMainCharacter::PlayHurtAnim(TSubclassOf<class UCameraShakeBase> CameraShakeTemplate)
+{
+
+	if (!HurtAnimMontage)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HurtAnimMontage is null! Cannot play hurt animation."));
+		return;
+	}
+
+	PlayAnimMontage(HurtAnimMontage);
+
+	if (CameraShakeTemplate)
+	{
+		GetController<APlayerController>()
+			->ClientStartCameraShake(CameraShakeTemplate);
+	}
 }
 
