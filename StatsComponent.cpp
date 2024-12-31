@@ -1,6 +1,7 @@
 #include "Characters/StatsComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Interfaces/FighterInterface.h"
 
 UStatsComponent::UStatsComponent()
 {
@@ -30,15 +31,30 @@ void UStatsComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
     RegenStamina();
 }
 
-void UStatsComponent::ReduceHealth(float Amount)
+
+void UStatsComponent::ReduceHealth(float Amount, AActor* Opponent)
 {
+    UE_LOG(LogTemp, Warning, TEXT("ReduceHealth called with Amount=%f"), Amount);
+
     if (!Stats.Contains(EStat::Health) || !Stats.Contains(EStat::MaxHealth))
     {
-        UE_LOG(LogTemp, Error, TEXT("Stats map is missing keys for Health or MaxHealth!"));
+        UE_LOG(LogTemp, Error, TEXT("Health keys missing in Stats map"));
         return;
     }
 
-    if (Stats[EStat::Health] <= 0) { return; }
+    AActor* Owner = GetOwner();
+    if (!Owner)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Owner is null in ReduceHealth"));
+        return;
+    }
+
+    IFighterInterface* FighterRef = Cast<IFighterInterface>(Owner);
+    if (!FighterRef || !FighterRef->CanTakeDamage(Opponent))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FighterRef is invalid or cannot take damage"));
+        return;
+    }
 
     Stats[EStat::Health] -= Amount;
     Stats[EStat::Health] = UKismetMathLibrary::FClamp(
@@ -47,7 +63,16 @@ void UStatsComponent::ReduceHealth(float Amount)
         Stats[EStat::MaxHealth]
     );
 
-    UE_LOG(LogTemp, Warning, TEXT("ReduceHealth: Health reduced by %f. Current Health: %f"), Amount, Stats[EStat::Health]);
+    UE_LOG(LogTemp, Warning, TEXT("Health reduced to: %f"), Stats[EStat::Health]);
+
+    OnHealthPercentUpdateDelegate.Broadcast(
+        GetStatPercentage(EStat::Health, EStat::MaxHealth)
+    );
+
+    if (Stats[EStat::Health] <= 0)
+    {
+        OnZeroHealthDelegate.Broadcast();
+    }
 }
 
 void UStatsComponent::ReduceStamina(float Amount)
@@ -71,9 +96,7 @@ void UStatsComponent::ReduceStamina(float Amount)
         Stats[EStat::MaxStamina]
     );
 
-   
-
-    bCanRegen = false;
+     bCanRegen = false;
 
     FLatentActionInfo FunctionInfo{
         0,
@@ -86,6 +109,11 @@ void UStatsComponent::ReduceStamina(float Amount)
         GetWorld(),
         StaminaDelayDuration,
         FunctionInfo
+    );
+
+    OnStaminaPercentUpdateDelegate.Broadcast
+    (
+        GetStatPercentage(EStat::Stamina, EStat::MaxStamina)
     );
 }
 
@@ -106,6 +134,11 @@ void UStatsComponent::RegenStamina()
         StaminaRegenRate
     );
 
+    OnStaminaPercentUpdateDelegate.Broadcast
+    (
+        GetStatPercentage(EStat::Stamina, EStat::MaxStamina)
+    );
+
     Stats[EStat::Stamina] = UKismetMathLibrary::FClamp(
         Stats[EStat::Stamina],
         0,
@@ -119,5 +152,10 @@ void UStatsComponent::EnableRegen()
 {
     bCanRegen = true;
     
+}
+
+float UStatsComponent::GetStatPercentage(EStat Current, EStat Max)
+{
+    return Stats[Current] / Stats[Max];
 }
 
