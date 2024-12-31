@@ -2,6 +2,8 @@
 
 
 #include "Combat/BlockComponent.h"
+#include "GameFramework/Character.h"
+#include "Interfaces/MainCharacterInterface.h"
 
 // Sets default values for this component's properties
 UBlockComponent::UBlockComponent()
@@ -30,5 +32,33 @@ void UBlockComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+bool UBlockComponent::BlockSuccess(AActor* Opponent)
+{
+	ACharacter* CharacterRef{ GetOwner<ACharacter>() };
+
+	if (!CharacterRef->Implements<UMainCharacterInterface>())
+	{
+		return true;
+	}
+
+	IMainCharacterInterface* PlayerRef{ Cast<IMainCharacterInterface>(CharacterRef) };
+
+	FVector OpponentForward{ Opponent->GetActorForwardVector()};
+	FVector PlayerForward{ CharacterRef->GetActorForwardVector() };
+
+	double Result{ FVector::DotProduct(OpponentForward, PlayerForward) };	
+
+	if (Result > 0 || !PlayerRef->HasEnoughStamina(StaminaCost))
+	{
+		return true;
+	}
+
+	CharacterRef->PlayAnimMontage(BlockAnimMontage);
+
+	OnBlockDelegate.Broadcast(StaminaCost);
+	
+	return false;
 }
 
