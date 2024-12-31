@@ -7,6 +7,7 @@
 #include "EnemyProjectileComponent.generated.h"
 
 
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class HERO_SOULS_API UEnemyProjectileComponent : public UActorComponent
 {
