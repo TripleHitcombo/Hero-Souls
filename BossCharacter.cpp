@@ -5,6 +5,11 @@
 #include "Characters/StatsComponent.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Combat/CombatComponent.h"
+#include "Characters/MainCharacter.h"
+#include "BrainComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Interfaces/MainCharacterInterface.h"
 
 // Sets default values
 ABossCharacter::ABossCharacter()
@@ -13,6 +18,7 @@ ABossCharacter::ABossCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	StatsComp = CreateDefaultSubobject<UStatsComponent>(TEXT("Stats Component"));
+	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 
 }
 
@@ -21,7 +27,9 @@ void ABossCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BlackboardComp = GetController<AAIController>()
+	ControllerRef = GetController<AAIController>();
+
+	BlackboardComp = ControllerRef
 		->GetBlackboardComponent();
 
 	BlackboardComp->SetValueAsEnum
@@ -29,6 +37,12 @@ void ABossCharacter::BeginPlay()
 		TEXT("CurrentState"),
 		InitialState
 	);
+
+	GetWorld()->GetFirstPlayerController()
+		->GetPawn<AMainCharacter>()
+		->StatsComp
+		->OnZeroHealthDelegate
+		.AddDynamic(this, &ABossCharacter::HandlePlayerDeath);
 	
 }
 
@@ -63,5 +77,75 @@ void ABossCharacter::DetectPawn(APawn* DetectedPawn, APawn* PawnToDetect)
 		TEXT("CurrentState"),
 		EEnemyState::Range
 	);
+}
+
+float ABossCharacter::GetDamage()
+{
+	return StatsComp->Stats[EStat::Strength];
+
+}
+
+void ABossCharacter::Attack()
+{
+	CombatComp->RandomAttack();
+}
+
+float ABossCharacter::GetAnimDuration()
+{
+	return CombatComp->AnimDuration;
+}
+
+float ABossCharacter::GetMeleeRange()
+{
+	return StatsComp->Stats[EStat::MaeleeRange];
+}
+
+void ABossCharacter::HandlePlayerDeath()
+{
+	ControllerRef->GetBlackboardComponent()
+		->SetValueAsEnum
+		(
+			TEXT("CurrentState"),
+			EEnemyState::GameOver	
+		);
+}
+
+void ABossCharacter::HandleDeath()
+{
+	float Duration{ PlayAnimMontage(DeathAnim) };
+
+	ControllerRef->GetBrainComponent()->StopLogic("defeated");//name stop logic for readability
+
+	FindComponentByClass<UCapsuleComponent>()
+		->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	FTimerHandle DestroyTimerHandle;
+
+	GetWorld()->GetTimerManager().SetTimer
+	(
+		DestroyTimerHandle, 
+		this, 
+		&ABossCharacter::FinishDeathAnim,
+		Duration,
+		false
+	);
+
+	IMainCharacterInterface* PlayerRef
+	{
+		GetWorld()->GetFirstPlayerController()
+		->GetPawn<IMainCharacterInterface>()
+	};
+
+	if (!PlayerRef)
+	{
+		return;
+	}
+
+	PlayerRef->EndLockOnWithActor(this);
+}
+
+void ABossCharacter::FinishDeathAnim()
+{
+	Destroy();
 }
 
