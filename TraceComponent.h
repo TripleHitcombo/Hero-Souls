@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Combat/FTraceSockets.h"
 #include "TraceComponent.generated.h"
 
 
@@ -15,13 +16,7 @@ class HERO_SOULS_API UTraceComponent : public UActorComponent
 	USkeletalMeshComponent* SkeletalComp;
 
 	UPROPERTY(EditAnywhere)
-	FName Start;
-
-	UPROPERTY(EditAnywhere)
-	FName End;
-
-	UPROPERTY(EditAnywhere)
-	FName Rotation;
+	TArray< FTraceSockets> Sockets;
 
 	UPROPERTY(EditAnywhere)
 	double BoxCollisionLength{ 30.0 };
@@ -30,6 +25,9 @@ class HERO_SOULS_API UTraceComponent : public UActorComponent
 	bool bDebugMode{ false };
 
 	TArray<AActor*> TargetsToIgnore;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* HitParticleTemplate;
 
 public:	
 	// Sets default values for this component's properties
@@ -48,5 +46,9 @@ public:
 
 	UFUNCTION (BlueprintCallable)
 	void HandleResetAttack();
+	UFUNCTION(BlueprintCallable)
+	void BeginAttack(); // Declaration for starting the attack
+	UFUNCTION(BlueprintCallable)
+	void EndAttack();   // Declaration for ending the attack
 
 };
