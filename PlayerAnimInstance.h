@@ -28,11 +28,14 @@ protected:
 	float CurrentDirection{ 0.0f };
 
 public:
-	
+		
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool isBlocking{ false };
+
 	UFUNCTION(BlueprintCallable)
 	void HandleUnpdatedTarget(AActor* NewTargetActorRef);
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateDirection();
-	
+			
 };
