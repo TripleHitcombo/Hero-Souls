@@ -1,54 +1,73 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Combat/EnemyProjectileComponent.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "Combat/EnemyProjectileActor.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+#include "Components/SphereComponent.h"
+#include "Engine/DamageEvents.h"
 
-// Sets default values for this component's properties
-UEnemyProjectileComponent::UEnemyProjectileComponent()
+// Sets default values
+AEnemyProjectileActor::AEnemyProjectileActor()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
 
-	// ...
 }
 
-
-// Called when the game starts
-void UEnemyProjectileComponent::BeginPlay()
+// Called when the game starts or when spawned
+void AEnemyProjectileActor::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
 	
 }
 
-
 // Called every frame
-void UEnemyProjectileComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void AEnemyProjectileActor::Tick(float DeltaTime)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	Super::Tick(DeltaTime);
 
-	// ...
 }
 
-void UEnemyProjectileComponent::SpawnProjectile(FName ComponentName, TSubclassOf<AActor> ProjectileClass)
+void AEnemyProjectileActor::HandleBeginOverlap(AActor* OtherActor)
 {
-	USceneComponent* SpawnPointComp{ Cast<USceneComponent>(GetOwner()->GetDefaultSubobjectByName(ComponentName))};
+	APawn* PawnRef{ Cast<APawn>(OtherActor) };
 
-	FVector SpawnLocation{ SpawnPointComp->GetComponentLocation() };
+	if (!PawnRef->IsPlayerControlled()) { return; }
 
-	FVector PlayerLocation
-	{
-		GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation() 
-	};
+	FindComponentByClass<UParticleSystemComponent>()
+		->SetTemplate(HitTemplate);
 
-	FRotator SpawnRotation
-	{ 
-		UKismetMathLibrary::FindLookAtRotation(SpawnLocation, PlayerLocation)
-	};
+	FindComponentByClass<UProjectileMovementComponent>()
+		->StopMovementImmediately();
 
-	GetWorld()->SpawnActor(ProjectileClass, &SpawnLocation, &SpawnRotation);
+	FTimerHandle DeathTimerHandle{};
+
+	GetWorldTimerManager().SetTimer(
+		DeathTimerHandle,
+		this,
+		&AEnemyProjectileActor::DestroyProjectile,
+		0.5f
+	);
+
+	FindComponentByClass<USphereComponent>()
+		->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	FDamageEvent ProjectileAttackEvent{};
+
+	PawnRef->TakeDamage(
+		Damage,
+		ProjectileAttackEvent,
+		PawnRef->GetController(),
+		this
+	);
+
+
+
+}
+
+void AEnemyProjectileActor::DestroyProjectile()
+{
+	Destroy();
 }
 
