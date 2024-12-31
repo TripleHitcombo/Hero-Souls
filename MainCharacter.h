@@ -13,6 +13,13 @@ class HERO_SOULS_API AMainCharacter : public ACharacter, public IMainCharacterIn
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* DeathAnimMontage;
+
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* HurtAnimMontage;
+
+
 public:
 	// Sets default values for this character's properties
 	AMainCharacter();
@@ -52,5 +59,15 @@ public:
 	virtual float GetDamage() override;
 
 	virtual bool HasEnoughStamina(float Cost) override;
+
+	UFUNCTION(BlueprintCallable)
+	void HandleDeath();
+
+	virtual void EndLockOnWithActor(AActor* ActorRef) override;
+
+	virtual bool CanTakeDamage(AActor* Opponent) override;
+
+	UFUNCTION(BlueprintCallable)
+	void PlayHurtAnim(TSubclassOf<class UCameraShakeBase> CameraShakeTemplate);
 
 };
