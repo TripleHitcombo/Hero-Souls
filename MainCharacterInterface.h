@@ -27,4 +27,6 @@ public:
 	{
 		return true;
 	}
+
+	virtual void EndLockOnWithActor(AActor* ActorRef) {};
 };
