@@ -42,9 +42,7 @@ protected:
 	virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable)
 	void StartLockOn(float Radius = 750.0f);
-
-	void EndLockOn();
-
+		
 	UFUNCTION(BlueprintCallable)
 	void ToggleLockOn(float Radius = 750.0f);
 
@@ -55,5 +53,5 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
+	void EndLockOn();	
 };
